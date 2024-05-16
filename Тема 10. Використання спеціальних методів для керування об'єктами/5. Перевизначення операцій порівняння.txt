@@ -1,0 +1,137 @@
+Перевизначення операцій порівняння
+
+Перевизначення операцій порівняння в Python дозволяє об'єктам ваших класів взаємодіяти 
+з операторами порівняння (<, <=, >, >=, ==, !=), щоб вказати, як саме об'єкти повинні 
+бути порівнювані між собою. Це досягається за допомогою реалізації спеціальних методів у вашому класі.
+
+Тому операції порівняння, як і інші оператори, мають свої "магічні" методи:
+
+__eq__(self, other) — визначає поведінку під час перевірки на відповідність (==).
+__ne__(self, other) — визначає поведінку під час перевірки на невідповідність. !=.
+__lt__(self, other) — визначає поведінку під час перевірки на менше <.
+__gt__(self, other) — визначає поведінку під час перевірки на більше >.
+__le__(self, other) — визначає поведінку під час перевірки на менше-дорівнює <=.
+__ge__(self, other) — визначає поведінку під час перевірки на більше-дорівнює >=.
+
+Якщо нам потрібно, щоб об'єкт був порівнянний, ми можемо реалізувати ці шість методів 
+і тоді будь-яка перевірка на порівняння працюватиме.
+
+Розглянемо клас Rectangle, який представляє прямокутник з двома властивостями: 
+шириною width і висотою height. Ми хочемо порівнювати прямокутники на основі розміру їх площі.
+
+class Rectangle:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+    def area(self):
+        return self.width * self.height
+
+    def __eq__(self, other):
+        if not isinstance(other, Rectangle):
+            return NotImplemented
+        return self.area() == other.area()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        if not isinstance(other, Rectangle):
+            return NotImplemented
+        return self.area() < other.area()
+
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __gt__(self, other):
+        if not isinstance(other, Rectangle):
+            return NotImplemented
+        return self.area() > other.area()
+
+    def __ge__(self, other):
+        return self.__gt__(other) or self.__eq__(other)
+
+if __name__ == "__main__":
+    rect1 = Rectangle(5, 10)
+    rect2 = Rectangle(3, 20)
+    rect3 = Rectangle(5, 10)
+    print(f"Площа прямокутників: {rect1.area()}, {rect2.area()}, {rect3.area()}")
+    print(rect1 == rect3)  # True: площі рівні
+    print(rect1 != rect2)  # True: площі не рівні
+    print(rect1 < rect2)  # True: площа rect1  менша, ніж у rect2
+    print(rect1 <= rect3)  # True: площі рівні, тому rect1 <= rect3
+    print(rect1 > rect2)  # False: площа rect1 менша, ніж у rect2
+    print(rect1 >= rect3)  # True: площі рівні, тому rect1 >= rect3
+
+Виведення:
+
+Площа прямокутників: 50, 60, 50
+True
+True
+True
+True
+False
+True
+
+Кожен з методів порівняння спирається на площу прямокутника як критерій порівняння. 
+Метод __eq__ перевіряє рівність площ, а методи __lt__ та __gt__ порівнюють, 
+чи менша або більша площа одного прямокутника за площу іншого. Інші методи будуються 
+на цих базових порівняннях, забезпечуючи повний набір операцій порівняння.
+
+Використання NotImplemented в методах порівняння є прийнятою і рекомендованою практикою, 
+коли ви стикаєтеся з ситуацією, де ваш метод не знає, як порівнювати об'єкт з іншим 
+типом об'єкта. Коли метод порівняння повертає NotImplemented, Python розуміє, що 
+поточний метод не може виконати порівняння і спробує знайти інший спосіб порівняння, 
+наприклад, викликавши відповідний метод у другого об'єкта або вдаючись до інших 
+механізмів порівняння. Якщо жоден метод не може порівняти об'єкти, тоді інтерпретатор 
+викине виключення TypeError. Наприклад операція порівняння 
+rect1 > 10 призведе до TypeError: '>' not supported between instances of 'Rectangle' and 'int' .
+
+Реалізуємо клас Point, який представляє точку в двовимірному просторі з 
+координатами x та y. Основна мета прикладу показати можливість порівнювати 
+точки за їхніми координатами за допомогою стандартних операторів 
+порівняння (==, !=, <, >, <=, >=).
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+        return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+        return self.x < other.x and self.y < other.y
+
+    def __gt__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+        return self.x > other.x and self.y > other.y
+
+    def __le__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+        return self.x <= other.x and self.y <= other.y
+
+    def __ge__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+        return self.x >= other.x and self.y >= other.y
+
+if __name__ == "__main__":
+    print(Point(0, 0) == Point(0, 0))  # True
+    print(Point(0, 0) != Point(0, 0))  # False
+    print(Point(0, 0) < Point(1, 0))  # False
+    print(Point(0, 0) > Point(0, 1))  # False
+    print(Point(0, 2) >= Point(0, 1))  # True
+    print(Point(0, 0) <= Point(0, 0))  # True
+
+Наш приклад демонструє, як клас може інтуїтивно інтегруватися з Python операторами 
+порівняння, роблячи код, який використовує ці об'єкти, більш читабельним і природним.

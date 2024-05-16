@@ -1,0 +1,184 @@
+Методи __getitem__ та __setitem__ 
+
+Квадратні дужки дозволяють нам звертатися до елементів послідовності за індексом або до 
+елементів словника за ключем. Методи __getitem__ та __setitem__ в Python використовуються 
+для налаштування доступу до елементів об'єкта за допомогою індексації або ключів, подібно 
+до роботи зі списками чи словниками. Ці магічні методи дозволяють нашим класам імітувати 
+контейнерні типи даних.
+
+Метод __getitem__ визначає, як об'єкт класу повинен вести себе при доступі до його 
+елементів за допомогою індексу або ключа. Він приймає ключ або індекс як аргумент і
+повинен повертати значення, асоційоване з цим ключем або індексом.
+
+Метод __setitem__ визначає, як об'єкт повинен поводити себе при присвоєнні значення 
+елементу за певним індексом або ключем. Він приймає два аргументи: ключ (або індекс) 
+та значення, яке потрібно асоціювати з цим ключем.
+
+Розглянемо клас SimpleDict, який імітує поведінку словника:
+
+class SimpleDict:
+    def __init__(self):
+        self.__data = {}
+
+    def __getitem__(self, key):
+        return self.__data.get(key, "Key not found")
+
+    def __setitem__(self, key, value):
+        self.__data[key] = value
+
+# Використання класу
+simple_dict = SimpleDict()
+simple_dict['name'] = 'Boris'
+print(simple_dict['name'])  
+print(simple_dict['age'])  
+
+У прикладі, SimpleDict використовує внутрішній приватний словник __data для зберігання 
+своїх елементів. Метод __getitem__ дозволяє отримати значення за ключем, а __setitem__ 
+– встановити нове значення для ключа.
+
+Виведення:
+
+Boris
+Key not found
+
+Такий підхід робить клас більш гнучким і інтуїтивно зрозумілим для користувачів, 
+які звикли працювати зі стандартними контейнерами Python. 
+Використання __getitem__ та __setitem__ дозволяє об'єктам класу інтегруватися з 
+функціями та конструкціями мови, призначеними для роботи з послідовностями 
+або відображеннями, наприклад, циклами for, операторами in, функціями len(), і так далі.
+
+Крім того, цей підхід підвищує гнучкість класу, дозволяючи додавати додаткову 
+логіку перевірки або обробки при доступі до елементів або їх зміні. Наприклад, 
+тепер можна легко імплементувати перевірку типів даних або логування без зміни 
+зовнішнього інтерфейсу класу.
+
+Уявімо, що нам потрібно створити структуру даних, яка схожа на список, але з 
+обмеженням: елементи списку повинні завжди залишатися в певному діапазоні значень. 
+Наприклад, ми працюємо над програмою для керування температурою в приміщенні, 
+де значення температури повинні бути обмежені мінімальним та максимальним порогом.
+
+Реалізація:
+
+class BoundedList:
+    def __init__(self, min_value: int, max_value: int):
+        self.min_value = min_value
+        self.max_value = max_value
+        self.__data = []
+
+    def __getitem__(self, index: int):
+        return self.__data[index]
+
+    def __setitem__(self, index: int, value: int):
+        if not (self.min_value <= value <= self.max_value):
+            raise ValueError(f"Value {value} must be between {self.min_value} and {self.max_value}")
+        if index >= len(self.__data):
+            # Додати новий елемент, якщо індекс виходить за межі
+            self.__data.append(value)
+        else:
+            # Замінити існуючий елемент
+            self.__data[index] = value
+
+    def __repr__(self):
+        return f"BoundedList({self.max_value}, {self.min_value})"
+
+    def __str__(self):
+        return str(self.__data)
+
+if __name__ == '__main__':
+    temperatures = BoundedList(18, 26)
+
+    for i, el in enumerate([20, 22, 25, 27]):
+        try:
+            temperatures[i] = el
+        except ValueError as e:
+            print(e)
+
+    print(temperatures)
+
+Виведення:
+
+Value 27 must be between 18 and 26
+[20, 22, 25]
+
+Як бачимо спроба встановити значення поза дозволеним діапазоном призводить до 
+виведення помилки "Value 27 must be between 18 and 26". Ми встановили температурні 
+обмеження для значень, що зберігаються в структурі даних і що вони завжди відповідають 
+певним критеріям. Ми просто не зможемо додати дані до нашого списку які не проходять обмеження.
+
+Ми можемо об'єднати нашу реалізацію з можливостями класу UserList. 
+Успадкувавшись від UserList, ми отримуємо всі можливості звичайного списку, 
+але з можливістю модифікації поведінки за допомогою перевизначення методів або додавання нових.
+
+Реалізація:
+
+from collections import UserList
+
+class BoundedList(UserList):
+    def __init__(self, min_value: int, max_value: int, initial_list=None):
+        super().__init__(initial_list if initial_list is not None else [])
+        self.min_value = min_value
+        self.max_value = max_value
+        self.__validate_list()
+
+    def __validate_list(self):
+        for item in self.data:
+            self.__validate_item(item)
+
+    def __validate_item(self, item):
+        if not (self.min_value <= item <= self.max_value):
+            raise ValueError(f"Item {item} must be between {self.min_value} and {self.max_value}")
+
+    def append(self, item):
+        self.__validate_item(item)
+        super().append(item)
+
+    def insert(self, i, item):
+        self.__validate_item(item)
+        super().insert(i, item)
+
+    def __setitem__(self, i, item):
+        self.__validate_item(item)
+        super().__setitem__(i, item)
+
+    def __repr__(self):
+        return f"BoundedList({self.max_value}, {self.min_value})"
+
+    def __str__(self):
+        return str(self.data)
+
+if __name__ == '__main__':
+    temperatures = BoundedList(18, 26, [19, 21, 22])
+    print(temperatures)
+
+    for el in [20, 22, 25, 27]:
+        try:
+            temperatures.append(el)
+        except ValueError as e:
+            print(e)
+
+    print(temperatures)
+
+Виведення:
+
+[19, 21, 22]
+Item 27 must be between 18 and 26
+[19, 21, 22, 20, 22, 25]
+
+Тепер клас BoundedList веде себе як список, але з додатковим обмеженням на значення 
+елементів, що зберігаються в ньому. Використання UserList як базового класу спрощує 
+реалізацію, оскільки нам не потрібно заново визначати багато методів, типових для списку; 
+замість цього ми можемо зосередитися на логіці валідації даних.
+
+Зверніть увагу, що ми не виконали реалізацію метода __getitem__. Бо коли ми успадкувались 
+від UserList, ми отримали всю функціональність стандартного списку Python, але з 
+можливістю перевизначення або додавання методів для налаштування поведінки. 
+Таким чином, __getitem__ та інші методи доступу до елементів вже є частиною UserList, 
+і вони працюватимуть як очікується, якщо тільки ми не вирішимо їх перевизначити для зміни поведінки.
+
+Наприклад можна додати логування:
+
+def __getitem__(self, index):
+        # Додати спеціальну логіку тут, наприклад, логування або перевірку
+        print(f"Accessing item at index {index}")
+        # Викликати оригінальний метод __getitem__
+        return super().__getitem__(index)  
